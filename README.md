@@ -1,86 +1,16 @@
-# Morning Digest - Setup Instructions
+# Morning Digest 📊
 
-This folder contains a daily morning digest script that pulls from Bitbucket, Jira, and Git commits.
+A daily morning digest script that aggregates updates from Bitbucket, Jira, and Git repos into a clean, classic-format report. Designed to work with [Clawdbot](https://github.com/clawdbot/clawdbot) cron jobs but works standalone too.
 
-## What it does
+## Features
 
-Every morning at 9:00 AM ET, you'll get a classic-format digest with:
-- Bitbucket commits (last 24 hours)
-- Bitbucket pull requests (open PRs)
-- Jira updates (last 24 hours)
-- Local git commits (if configured)
+- **Bitbucket Integration**: Recent commits and open pull requests
+- **Jira Integration**: Updated issues from your projects
+- **Local Git Repos**: Optional commit history from local repositories
+- **Classic Format**: Clean, readable text output with clear sections
+- **Automated Delivery**: Schedule with cron or Clawdbot for daily reports
 
-## Files
-
-- **morning-digest.sh** - Main script with placeholder config
-- **README.md** - This file
-
-## Configuration (Fill these in at work!)
-
-Edit `morning-digest.sh` and replace the following placeholders:
-
-### Bitbucket Configuration
-
-```bash
-BITBUCKET_WORKSPACE="[your-workspace-name]"
-BITBUCKET_REPOS="[repo1,repo2,repo3]"  # comma-separated
-BITBUCKET_USERNAME="[your-email]"
-BITBUCKET_APP_PASSWORD="[your-app-password]"
-```
-
-**To generate a Bitbucket App Password:**
-1. Go to https://bitbucket.org/account/settings/app-passwords/
-2. Click "Create app password"
-3. Give it a label (e.g., "Morning Digest")
-4. Select permissions: **Repositories: Read**
-5. Copy the password (you can't see it again!)
-
-### Jira Configuration
-
-```bash
-JIRA_URL="[your-company.atlassian.net]"  # without https://
-JIRA_PROJECT_KEYS="[PROJ1,PROJ2]"  # comma-separated
-JIRA_EMAIL="[your-email]"
-JIRA_API_TOKEN="[your-api-token]"
-```
-
-**To generate a Jira API Token:**
-1. Go to https://id.atlassian.com/manage-profile/security/api-tokens
-2. Click "Create API token"
-3. Give it a label (e.g., "Morning Digest")
-4. Copy the token
-
-### Git Commits (Optional)
-
-```bash
-GIT_REPOS="[/path/to/repo1,/path/to/repo2]"  # comma-separated local paths
-```
-
-If you want to include local git repo commits, add the full paths here. Leave empty if you don't need this.
-
-## Schedule
-
-The digest runs every morning at **9:00 AM Eastern Time**.
-
-To view or manage the cron job:
-```bash
-clawdbot cron list
-clawdbot cron runs --id f8eec110-f612-451b-b194-41aa8b37f339
-```
-
-To manually test the script:
-```bash
-/root/clawd/scripts/morning-digest.sh
-```
-
-To force-run the cron job now:
-```bash
-clawdbot cron run f8eec110-f612-451b-b194-41aa8b37f339 --force
-```
-
-## Output Format
-
-The digest uses a "classic" format with clear sections:
+## Example Output
 
 ```
 ═══════════════════════════════════════════════
@@ -94,43 +24,196 @@ Repository: my-repo
   • 01/28 16:45 | Jane Smith | Added user dashboard
 
 ━━━ BITBUCKET PULL REQUESTS ━━━
-...
-
+Repository: my-repo
+----------------------------------------
+  • PR #42: New feature implementation [OPEN] - Jane Smith
+  
 ━━━ JIRA UPDATES (Last 24h) ━━━
-...
+Project: MYPROJ
+----------------------------------------
+  • MYPROJ-123: Fix authentication issue [In Progress] - John Doe
+  • MYPROJ-124: Add new dashboard [To Do] - Jane Smith
 
 ═══════════════════════════════════════════════
 Generated at: 09:00 AM EST
 ═══════════════════════════════════════════════
 ```
 
+## Prerequisites
+
+- `bash`
+- `curl`
+- `jq`
+- Bitbucket workspace with API access
+- Jira instance with API access
+- (Optional) Local git repositories
+
+## Quick Start
+
+### 1. Download the script
+
+```bash
+curl -O https://raw.githubusercontent.com/gianramirez/morning-digest/master/morning-digest.sh
+chmod +x morning-digest.sh
+```
+
+### 2. Configure credentials
+
+Edit `morning-digest.sh` and fill in these sections:
+
+#### Bitbucket Configuration
+
+```bash
+BITBUCKET_WORKSPACE="your-workspace-name"
+BITBUCKET_REPOS="repo1,repo2,repo3"  # comma-separated
+BITBUCKET_USERNAME="your-email@example.com"
+BITBUCKET_APP_PASSWORD="your-app-password"
+```
+
+**Generate Bitbucket App Password:**
+1. Go to https://bitbucket.org/account/settings/app-passwords/
+2. Create new token with **Repositories: Read** permission
+3. Copy the generated password
+
+#### Jira Configuration
+
+```bash
+JIRA_URL="your-company.atlassian.net"  # without https://
+JIRA_PROJECT_KEYS="PROJ1,PROJ2"  # comma-separated
+JIRA_EMAIL="your-email@example.com"
+JIRA_API_TOKEN="your-api-token"
+```
+
+**Generate Jira API Token:**
+1. Go to https://id.atlassian.com/manage-profile/security/api-tokens
+2. Create API token
+3. Copy the generated token
+
+#### Git Repos (Optional)
+
+```bash
+GIT_REPOS="/path/to/repo1,/path/to/repo2"  # comma-separated local paths
+```
+
+### 3. Test it
+
+```bash
+./morning-digest.sh
+```
+
+## Scheduling
+
+### Standard Cron
+
+Add to your crontab (`crontab -e`):
+
+```bash
+# Run at 9:00 AM every day
+0 9 * * * /path/to/morning-digest.sh | mail -s "Morning Digest" you@example.com
+```
+
+### Clawdbot Integration
+
+If you're using [Clawdbot](https://github.com/clawdbot/clawdbot):
+
+```bash
+clawdbot cron add \
+  --name "Morning Digest" \
+  --cron "0 9 * * *" \
+  --tz "America/New_York" \
+  --session isolated \
+  --message "Run the morning digest script and deliver the output" \
+  --deliver \
+  --channel last
+```
+
+This will:
+- Run at 9:00 AM Eastern Time
+- Execute the script
+- Deliver results to your last active chat (WhatsApp, Telegram, Discord, etc.)
+
+## Configuration Options
+
+Edit the script to customize:
+
+### Time Window
+
+Change how far back to look (default: 24 hours):
+
+```bash
+HOURS_BACK=24  # Change to 48 for 2 days, etc.
+```
+
+### Repository/Project Filters
+
+```bash
+# Watch specific repos
+BITBUCKET_REPOS="frontend,backend,api"
+
+# Watch specific Jira projects
+JIRA_PROJECT_KEYS="WEB,MOBILE,API"
+```
+
+### Output Location
+
+By default, output goes to `/tmp/morning-digest-YYYYMMDD.txt`. Change this:
+
+```bash
+OUTPUT="/path/to/your/digest.txt"
+```
+
+## Security Notes
+
+⚠️ **Important:**
+- The script stores API credentials in plaintext
+- Set proper permissions: `chmod 700 morning-digest.sh`
+- Consider using environment variables on shared systems
+- Never commit filled credentials to version control
+
 ## Troubleshooting
 
-**Nothing shows up:**
-- Check that you've filled in the configuration placeholders
-- Verify your API tokens are valid
-- Run the script manually to see error messages
+### No data appears
 
-**Some sections are empty:**
-- Normal if there's no activity in the last 24 hours
-- Check the repo/project names are correct
+- Verify API credentials are correct
+- Check repo/project names match exactly
+- Ensure there's activity in the time window
+- Run manually to see error messages
 
-**Script fails:**
-- Make sure `jq` and `curl` are installed
-- Check your API credentials
-- Verify network access to Bitbucket/Jira
+### Authentication errors
 
-## Security Note
+- Regenerate API tokens if expired
+- Verify email matches your Jira/Bitbucket account
+- Check workspace/org permissions
 
-This script stores API credentials in plaintext. Make sure:
-- The script has appropriate permissions: `chmod 700 morning-digest.sh`
-- Only you can read the file
-- Consider using environment variables if this is on a shared system
+### Script fails
 
-## Need Changes?
+```bash
+# Check dependencies
+which curl jq
 
-Edit the script to:
-- Change the time window (default: 24 hours)
-- Add/remove repos or projects
-- Modify the output format
-- Filter specific types of updates
+# Run with verbose output
+bash -x ./morning-digest.sh
+```
+
+## Contributing
+
+Pull requests welcome! Areas for improvement:
+
+- Additional integrations (GitLab, Azure DevOps, etc.)
+- Output format options (JSON, HTML, Markdown)
+- Filtering/search capabilities
+- Configuration file support
+
+## License
+
+MIT License - see [LICENSE](LICENSE) file for details.
+
+## Related Projects
+
+- [Clawdbot](https://github.com/clawdbot/clawdbot) - AI assistant with scheduling
+- [Bitbucket API Docs](https://developer.atlassian.com/cloud/bitbucket/rest/)
+- [Jira API Docs](https://developer.atlassian.com/cloud/jira/platform/rest/v3/)
+
+## Author
+
+Created for use with Clawdbot automation workflows.
