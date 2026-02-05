@@ -1,0 +1,6 @@
+# Ignore output files
+*.txt
+/tmp/
+
+# Ignore filled-in config (contains credentials)
+morning-digest-filled.sh
